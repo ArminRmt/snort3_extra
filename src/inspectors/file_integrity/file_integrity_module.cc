@@ -1,3 +1,10 @@
+// registers file integrity monitor as a Snort plugin
+// Defines configuration options that users can set
+// Parses Snort configuration into usable values
+// Creates the monitoring inspector with those settings
+// Registers as a Snort plugin for automatic loading
+// Handles the complete lifecycle of the module
+
 #include "file_integrity_module.h"
 #include "file_integrity.h"
 
@@ -10,6 +17,8 @@
 
 using namespace snort;
 
+// configuration parameters for the module
+// { name, type, range, default, description }
 static const Parameter file_integrity_params[] =
 {
     { "baseline_file",         Parameter::PT_STRING, nullptr, nullptr,
@@ -33,21 +42,25 @@ static const Parameter file_integrity_params[] =
     { nullptr, Parameter::PT_MAX, nullptr, nullptr, nullptr }
 };
 
+// no rules to register
 static const RuleMap file_integrity_rules[] =
 {
     { 0, nullptr }
 };
 
+// No counters are exposed
 static const PegInfo file_integrity_pegs[] =
 {
     { CountType::END, nullptr, nullptr }
 };
 
+// Construct the module, {internal name, pretty name, parameter schema table}
 FileIntegrityModule::FileIntegrityModule() : 
     Module("file_integrity", "file_integrity", file_integrity_params)
 {
 }
 
+// Splits a comma-separated string (like "a,b,c") into a vector of strings
 static inline void split_csv(const char* csv, std::vector<std::string>& out)
 {
     if (!csv) return;
@@ -108,6 +121,7 @@ bool FileIntegrityModule::end(const char*, int, SnortConfig*)
     return true;
 }
 
+// statistics information
 const PegInfo* FileIntegrityModule::get_pegs() const
 {
     return file_integrity_pegs;
@@ -123,6 +137,7 @@ ProfileStats* FileIntegrityModule::get_profile() const
     return nullptr;
 }
 
+// creating and destroying the module
 static Module* mod_ctor()
 {
     return new FileIntegrityModule;
@@ -133,6 +148,7 @@ static void mod_dtor(Module* m)
     delete m;
 }
 
+// inspector instance
 static Inspector* file_integrity_ctor(Module* m)
 {
     auto* mod = static_cast<FileIntegrityModule*>(m);
@@ -156,6 +172,7 @@ static void file_integrity_dtor(Inspector* p)
     delete p;
 }
 
+// plugin API structure that Snort uses to load the module
 static const InspectApi file_integrity_api =
 {
     {
@@ -185,7 +202,7 @@ static const InspectApi file_integrity_api =
 };
 
 
-
+// Exports the plugin for dynamic loading (BUILDING_SO) or static linking
 #ifdef BUILDING_SO
 SO_PUBLIC const BaseApi* snort_plugins[] =
 {

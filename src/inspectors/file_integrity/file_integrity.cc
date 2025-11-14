@@ -39,6 +39,7 @@ FileIntegrity::FileIntegrity() : Inspector()
     alert_on_deletion = true;
 }
 
+// destructor for object graceful shutdown
 FileIntegrity::~FileIntegrity()
 {
     running = false;
@@ -78,6 +79,8 @@ void FileIntegrity::show(const SnortConfig*) const
     }
 }
 
+
+// Opens file, Reads file in 8KB chunks, Updates SHA-256 context with each chunk
 std::string FileIntegrity::compute_sha256(const std::string& file_path)
 {
 #ifdef _WIN32
@@ -131,6 +134,8 @@ std::string FileIntegrity::compute_sha256(const std::string& file_path)
     return ss.str();
 }
 
+
+// reads a baseline file that contains file paths and their expected SHA-256 hashes
 void FileIntegrity::load_baseline()
 {
     std::lock_guard<std::mutex> lock(hash_mutex);
@@ -226,6 +231,8 @@ void FileIntegrity::monitor_files()
         const std::string& old_hash = old_entry.second;
         
         auto new_it = current_hashes.find(file_path);
+
+        // Files that exist in old hashes but not in current hashes
         if (new_it == current_hashes.end())
         {
             if (alert_on_deletion)
@@ -258,6 +265,7 @@ void FileIntegrity::monitor_files()
         }
     }
     
+    // updates the stored file hashes with current state
     file_hashes = std::move(current_hashes);
 }
 
@@ -266,6 +274,7 @@ void FileIntegrity::check_integrity()
     monitor_files();
 }
 
+// background watchdog that continuously monitors file integrity at regular intervals
 void FileIntegrity::tinit()
 {
     load_baseline();
